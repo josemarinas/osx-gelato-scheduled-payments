@@ -1,4 +1,5 @@
-@aragon/osx/=lib/osx-commons/contracts/src/
+@aragon/osx-commons/=lib/osx-commons/contracts/src/
+@aragon/osx/=lib/osx/packages/contracts/src/
 @gelato/automate/=lib/automate/contracts/
 @openzeppelin/contracts-upgradeable/=lib/openzeppelin-contracts-upgradeable/contracts/
 @openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/

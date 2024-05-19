@@ -3,6 +3,7 @@ pragma solidity ^0.8.13;
 
 import {Test, console} from "forge-std/Test.sol";
 import {ScheduledPayments} from "../src/ScheduledPayments.sol";
+import {DaoFactory} from "@aragon/osx/framework/dao/DaoFactory.sol";
 
 contract ScheduledPaymentsPluginTest is Test {
     uint256 mainnetFork;
@@ -17,7 +18,7 @@ contract ScheduledPaymentsPluginTest is Test {
     }
 
     function createMultisigDAO() public {
-        DAO
+        DAOFactory daoFactory = DAOFactory(DAO_FACTORY_ADDRESS);
     }
     function testCreateAgreement() public view {
         console.log("myAddress: ", myAddress);

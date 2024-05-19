@@ -1,10 +1,10 @@
 pragma solidity ^0.8.8;
 
-import {IDAO} from "@aragon/osx/dao/IDAO.sol";
-import {PermissionLib} from "@aragon/osx/permission/PermissionLib.sol";
-import {PluginSetup} from "@aragon/osx/plugin/setup/PluginSetup.sol";
-import {IPluginSetup} from "@aragon/osx/plugin/setup/IPluginSetup.sol";
-import {ProxyLib} from "@aragon/osx/utils/deployment/ProxyLib.sol";
+import {IDAO} from "@aragon/osx-commons/dao/IDAO.sol";
+import {PermissionLib} from "@aragon/osx-commons/permission/PermissionLib.sol";
+import {PluginSetup} from "@aragon/osx-commons/plugin/setup/PluginSetup.sol";
+import {IPluginSetup} from "@aragon/osx-commons/plugin/setup/IPluginSetup.sol";
+import {ProxyLib} from "@aragon/osx-commons/utils/deployment/ProxyLib.sol";
 import {ScheduledPayments} from "./ScheduledPayments.sol";
 
 abstract contract ScheduledPaymentsSetup is PluginSetup {

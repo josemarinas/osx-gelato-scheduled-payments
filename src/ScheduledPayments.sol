@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import {PluginUUPSUpgradeable} from "@aragon/osx/plugin/PluginUUPSUpgradeable.sol";
-import {IDAO} from "@aragon/osx/dao/IDAO.sol";
+import {PluginUUPSUpgradeable} from "@aragon/osx-commons/plugin/PluginUUPSUpgradeable.sol";
+import {IDAO} from "@aragon/osx-commons/dao/IDAO.sol";
 import {Automate} from "@gelato/automate/Automate.sol";
 import {LibDataTypes} from "@gelato/automate/libraries/LibDataTypes.sol";
 
