@@ -22,3 +22,6 @@
 [submodule "lib/oz-contracts-upgradeable-4.4.2"]
 	path = lib/oz-contracts-upgradeable-4.4.2
 	url = https://github.com/OpenZeppelin/openzeppelin-contracts-upgradeable
+[submodule "lib/oz-contracts-4.5.0"]
+	path = lib/oz-contracts-4.5.0
+	url = https://github.com/OpenZeppelin/openzeppelin-contracts
