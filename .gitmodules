@@ -19,3 +19,6 @@
 [submodule "lib/buffer"]
 	path = lib/buffer
 	url = https://github.com/ensdomains/buffer
+[submodule "lib/osx"]
+	path = lib/osx
+	url = https://github.com/aragon/osx
