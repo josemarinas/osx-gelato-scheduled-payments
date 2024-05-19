@@ -26,40 +26,45 @@ abstract contract ScheduledPaymentsSetup is PluginSetup {
         // Prepare and Deploy the plugin proxy.
         plugin = ProxyLib.deployUUPSProxy(
             address(_scheduledPaymentsBase),
-            abi.encodeCall(ScheduledPayments.initialize, (IDAO(_dao)))
+            abi.encode(
+                _scheduledPaymentsBase.initialize.selector,
+                IDAO(_dao),
+                // Automate address
+                address(0)
+            )
         );
 
-        // Prepare permissions
-        PermissionLib.MultiTargetPermission[]
-            memory permissions = new PermissionLib.MultiTargetPermission[](1);
+        // // Prepare permissions
+        // PermissionLib.MultiTargetPermission[]
+        //     memory permissions = new PermissionLib.MultiTargetPermission[](1);
 
-        // Set permissions to be granted.
-        // Grant the list of permissions of the plugin to the DAO.
-        permissions[0] = PermissionLib.MultiTargetPermission({
-            operation: PermissionLib.Operation.Grant,
-            where: plugin,
-            who: _dao,
-            condition: PermissionLib.NO_CONDITION,
-            permissionId: _scheduledPaymentsBase.CANCEL_AGREEMENT_PERMISSION_ID()
-        });
+        // // Set permissions to be granted.
+        // // Grant the list of permissions of the plugin to the DAO.
+        // permissions[0] = PermissionLib.MultiTargetPermission({
+        //     operation: PermissionLib.Operation.Grant,
+        //     where: plugin,
+        //     who: _dao,
+        //     condition: PermissionLib.NO_CONDITION,
+        //     permissionId: _scheduledPaymentsBase.CANCEL_AGREEMENT_PERMISSION_ID()
+        // });
 
-        preparedSetupData.permissions = permissions;
+        // preparedSetupData.permissions = permissions;
 
     }
 
     // @inheritdoc IPluginSetup
-    function prepareUpdate(
-        address _dao,
-        uint16 _currentBuild,
-        SetupPayload calldata _payload
-    )
-        external
-        pure
-        override
-        returns (bytes memory initData, PreparedSetupData memory preparedSetupData)
-    {
+    // function prepareUpdate(
+    //     address _dao,
+    //     uint16 _currentBuild,
+    //     SetupPayload calldata _payload
+    // )
+    //     external
+    //     pure
+    //     override
+    //     returns (bytes memory initData, PreparedSetupData memory preparedSetupData)
+    // {
 
-    }
+    // }
 
     // @inheritdoc IPluginSetup
     function prepareUninstallation(
@@ -70,17 +75,17 @@ abstract contract ScheduledPaymentsSetup is PluginSetup {
         permissions = new PermissionLib.MultiTargetPermission[](1);
 
         // Set permissions to be Revoked.
-        permissions[0] = PermissionLib.MultiTargetPermission({
-            operation: PermissionLib.Operation.Revoke,
-            where: _payload.plugin,
-            who: _dao,
-            condition: PermissionLib.NO_CONDITION,
-            permissionId: _scheduledPaymentsBase.CANCEL_AGREEMENT_PERMISSION_ID()
-        });
+        // permissions[0] = PermissionLib.MultiTargetPermission({
+        //     operation: PermissionLib.Operation.Revoke,
+        //     where: _payload.plugin,
+        //     who: _dao,
+        //     condition: PermissionLib.NO_CONDITION,
+        //     permissionId: _scheduledPaymentsBase.CANCEL_AGREEMENT_PERMISSION_ID()
+        // });
     }
 
-    // @inheritdoc IPluginSetup
-    function implementation() public override view returns (address) {
-        return address(_scheduledPaymentsBase);
-    }
+    // // @inheritdoc IPluginSetup
+    // function implementation() public override view returns (address) {
+    //     return address(_scheduledPaymentsBase);
+    // }
 }

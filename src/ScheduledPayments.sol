@@ -22,8 +22,7 @@ contract ScheduledPayments is PluginUUPSUpgradeable {
     mapping(uint256 => Agreement) public agreements;
 
     function initialize(IDAO _dao, address _automate) public initializer {
-        __PluginBase_init(_dao);
-        automateAddress = _automate;
+        _automateAddress = _automate;
     }
 
     function createAgreement(
@@ -34,32 +33,28 @@ contract ScheduledPayments is PluginUUPSUpgradeable {
         uint8 _interval,
         uint8 _numberOfPayments
     ) public {
-        LibDataTypes.ModuleData gelatoModules = LibDataTypes.ModuleData({
-            modules: [LibDataTypes.Module.TRIGGER],
-            args: [
-                abi.encode(
-                    LibDataTypes.Time({
-                        nextExec: block.timestamp + _interval,
-                        interval: _interval
-                    })
-                )
-            ]
+
+        LibDataTypes.Module[] memory modules = new LibDataTypes.Module[](1);
+        modules[0] = LibDataTypes.Module.PROXY;
+        LibDataTypes.ModuleData memory gelatoModules = LibDataTypes.ModuleData({
+            modules: modules ,
+            args: new bytes[](1)
         });
-        automate = Automate(automateAddress);
-        automate.createTask(
-            address(this.dao),
-            abi.encodeWithSignature("executePayment(uint256)", agreementNonce),
-            gelatoModules
-        );
+        Automate automate = Automate(_automateAddress);
+        // automate.createTask(
+        //     address(this.dao),
+        //     abi.encodeWithSignature("executePayment(uint256)", _agreementNonce),
+        //     gelatoModules
+        // );
     }
 
     function executePayment(uint256 _agreementId) public {
         Agreement storage agreement = agreements[_agreementId];
-        require(
-            block.timestamp >= agreement.lastPayment + agreement.interval,
-            "ScheduledPaymentsPlugin: Payment not due"
-        );
-        agreement.lastPayment = block.timestamp;
-        payable(agreement.recipient).transfer(agreement.amount);
+        // require(
+        //     block.timestamp >= agreement.lastPayment + agreement.interval,
+        //     "ScheduledPaymentsPlugin: Payment not due"
+        // );
+        // agreement.lastPayment = block.timestamp;
+        // payable(agreement.recipient).transfer(agreement.amount);
     }
 }
