@@ -1,0 +1,2 @@
+@aragon/osx/=lib/osx-commons/contracts/src/
+@gelato/automate/=lib/automate/contracts/
