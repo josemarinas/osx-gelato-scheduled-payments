@@ -19,3 +19,6 @@
 [submodule "lib/buffer"]
 	path = lib/buffer
 	url = https://github.com/ensdomains/buffer
+[submodule "lib/oz-contracts-upgradeable-4.4.2"]
+	path = lib/oz-contracts-upgradeable-4.4.2
+	url = https://github.com/OpenZeppelin/openzeppelin-contracts-upgradeable
