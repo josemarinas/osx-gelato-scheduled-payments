@@ -1,19 +1,26 @@
 pragma solidity ^0.8.8;
 
-import {IDAO} from "@aragon/osx-commons/dao/IDAO.sol";
-import {PermissionLib} from "@aragon/osx-commons/permission/PermissionLib.sol";
-import {PluginSetup} from "@aragon/osx-commons/plugin/setup/PluginSetup.sol";
-import {IPluginSetup} from "@aragon/osx-commons/plugin/setup/IPluginSetup.sol";
-import {ProxyLib} from "@aragon/osx-commons/utils/deployment/ProxyLib.sol";
 import {ScheduledPayments} from "./ScheduledPayments.sol";
+import {IDAO} from "@aragon/osx-commons/dao/IDAO.sol";
+import {PluginUpgradeableSetup} from "@aragon/osx-commons/plugin/setup/PluginUpgradeableSetup.sol";
+import {ProxyLib} from "@aragon/osx-commons/utils/deployment/ProxyLib.sol";
+import {PermissionLib} from "@aragon/osx-commons/permission/PermissionLib.sol";
 
-abstract contract ScheduledPaymentsSetup is PluginSetup {
-    ScheduledPayments private immutable _scheduledPaymentsBase;
+contract ScheduledPaymentsSetup is PluginUpgradeableSetup {
+    using ProxyLib for address;
 
-    constructor() {
-        _scheduledPaymentsBase = new ScheduledPayments();
-    }
-    // @inheritdoc IPluginSetup
+    // TODO This permission identifier will be moved into a library in task OS-954.
+    /// @notice The ID of the permission required to call the `execute` function.
+    bytes32 internal constant CANCEL_AGREEMENT_PERMISSION =
+        keccak256("CANCEL_AGREEMENT_PERMISSION");
+    bytes32 internal constant CREATE_AGREEMENT_PERMISSION =
+        keccak256("CREATE_AGREEMENT_PERMISSION");
+    bytes32 internal constant EXECUTE_PAYMENT_PERMISSION =
+        keccak256("EXECUTE_PAYMENT_PERMISSION");
+
+    /// @notice The contract constructor, that deploys the `Multisig` plugin logic contract.
+    constructor() PluginUpgradeableSetup(address(new ScheduledPayments())) {}
+
     function prepareInstallation(
         address _dao,
         bytes calldata _data
@@ -21,71 +28,148 @@ abstract contract ScheduledPaymentsSetup is PluginSetup {
         external
         returns (address plugin, PreparedSetupData memory preparedSetupData)
     {
-        // no need to decode `_data` as it is not used in this plugin
+        // Decode `_data` to extract the params needed for deploying and initializing `Multisig` plugin.
+        address payable _automate = abi.decode(_data, (address));
 
-        // Prepare and Deploy the plugin proxy.
-        plugin = ProxyLib.deployUUPSProxy(
-            address(_scheduledPaymentsBase),
-            abi.encode(
-                _scheduledPaymentsBase.initialize.selector,
-                IDAO(_dao),
-                // Automate address
-                address(0)
+        // Deploy and initialize the plugin UUPS proxy.
+        plugin = IMPLEMENTATION.deployUUPSProxy(
+            abi.encodeCall(
+                ScheduledPayments.initialize,
+                (IDAO(_dao), _automate)
             )
         );
 
         // // Prepare permissions
-        // PermissionLib.MultiTargetPermission[]
-        //     memory permissions = new PermissionLib.MultiTargetPermission[](1);
+        PermissionLib.MultiTargetPermission[]
+            memory permissions = new PermissionLib.MultiTargetPermission[](5);
 
         // // Set permissions to be granted.
         // // Grant the list of permissions of the plugin to the DAO.
-        // permissions[0] = PermissionLib.MultiTargetPermission({
-        //     operation: PermissionLib.Operation.Grant,
-        //     where: plugin,
-        //     who: _dao,
-        //     condition: PermissionLib.NO_CONDITION,
-        //     permissionId: _scheduledPaymentsBase.CANCEL_AGREEMENT_PERMISSION_ID()
-        // });
+        // Grant `CREATE_AGREEMENT_PERMISSION`
+        // to the DAO to allow the DAO to create agreements.
+        permissions[0] = PermissionLib.MultiTargetPermission({
+            operation: PermissionLib.Operation.Grant,
+            where: plugin,
+            who: _dao,
+            condition: PermissionLib.NO_CONDITION,
+            permissionId: ScheduledPayments(IMPLEMENTATION)
+                .CREATE_AGREEMENT_PERMISSION()
+        });
+        // Grant `PAUSE_AGREEMENT_PERMISSION` and `RESUME_AGREEMENT_PERMISSION`
+        // to the DAO to allow the DAO to pause and resume agreements.
+        permissions[1] = PermissionLib.MultiTargetPermission({
+            operation: PermissionLib.Operation.Grant,
+            where: plugin,
+            who: _dao,
+            condition: PermissionLib.NO_CONDITION,
+            permissionId: ScheduledPayments(IMPLEMENTATION)
+                .PAUSE_AGREEMENT_PERMISSION()
+        });
+        permissions[2] = PermissionLib.MultiTargetPermission({
+            operation: PermissionLib.Operation.Grant,
+            where: plugin,
+            who: _dao,
+            condition: PermissionLib.NO_CONDITION,
+            permissionId: ScheduledPayments(IMPLEMENTATION)
+                .RESUME_AGREEMENT_PERMISSION()
+        });
+        // Grant `EXECUTE_PAYMENT_PERMISSION` to the automate address
+        // to allow the automate address to execute payments.
+        permissions[3] = PermissionLib.MultiTargetPermission({
+            operation: PermissionLib.Operation.Grant,
+            where: plugin,
+            who: _automate,
+            condition: PermissionLib.NO_CONDITION,
+            permissionId: ScheduledPayments(IMPLEMENTATION)
+                .EXECUTE_PAYMENT_PERMISSION()
+        });
+        // Grant `PAUSE_AGREEMENT_PERMISSION` to the automate address
+        permissions[4] = PermissionLib.MultiTargetPermission({
+            operation: PermissionLib.Operation.Grant,
+            where: plugin,
+            who: _automate,
+            condition: PermissionLib.NO_CONDITION,
+            permissionId: ScheduledPayments(IMPLEMENTATION)
+                .PAUSE_AGREEMENT_PERMISSION()
+        });
 
-        // preparedSetupData.permissions = permissions;
-
+        preparedSetupData.helpers = new address[](0);
+        preparedSetupData.helpers[0] = _automate;
+        preparedSetupData.permissions = permissions;
     }
 
-    // @inheritdoc IPluginSetup
-    // function prepareUpdate(
-    //     address _dao,
-    //     uint16 _currentBuild,
-    //     SetupPayload calldata _payload
-    // )
-    //     external
-    //     pure
-    //     override
-    //     returns (bytes memory initData, PreparedSetupData memory preparedSetupData)
-    // {
+    function prepareUpdate(
+        address _dao,
+        uint16 _fromBuild,
+        SetupPayload calldata _payload
+    )
+        external
+        view
+        override
+        returns (
+            bytes memory initData,
+            PreparedSetupData memory preparedSetupData
+        )
+    {
+        (initData);
+    }
 
-    // }
-
-    // @inheritdoc IPluginSetup
     function prepareUninstallation(
         address _dao,
         SetupPayload calldata _payload
-    ) external view returns (PermissionLib.MultiTargetPermission[] memory permissions) {
+    )
+        external
+        view
+        returns (PermissionLib.MultiTargetPermission[] memory permissions)
+    {
+        address _automate = _payload.currentHelpers[0];
         // Prepare permissions
-        permissions = new PermissionLib.MultiTargetPermission[](1);
+        permissions = new PermissionLib.MultiTargetPermission[](5);
 
-        // Set permissions to be Revoked.
-        // permissions[0] = PermissionLib.MultiTargetPermission({
-        //     operation: PermissionLib.Operation.Revoke,
-        //     where: _payload.plugin,
-        //     who: _dao,
-        //     condition: PermissionLib.NO_CONDITION,
-        //     permissionId: _scheduledPaymentsBase.CANCEL_AGREEMENT_PERMISSION_ID()
-        // });
+        permissions[0] = PermissionLib.MultiTargetPermission({
+            operation: PermissionLib.Operation.Revoke,
+            where: _payload.plugin,
+            who: _dao,
+            condition: PermissionLib.NO_CONDITION,
+            permissionId: ScheduledPayments(IMPLEMENTATION)
+                .CREATE_AGREEMENT_PERMISSION()
+        });
+        // Revoke `PAUSE_AGREEMENT_PERMISSION` and `RESUME_AGREEMENT_PERMISSION`
+        // to the DAO to allow the DAO to pause and resume agreements.
+        permissions[1] = PermissionLib.MultiTargetPermission({
+            operation: PermissionLib.Operation.Revoke,
+            where: _payload.plugin,
+            who: _dao,
+            condition: PermissionLib.NO_CONDITION,
+            permissionId: ScheduledPayments(IMPLEMENTATION)
+                .PAUSE_AGREEMENT_PERMISSION()
+        });
+        permissions[2] = PermissionLib.MultiTargetPermission({
+            operation: PermissionLib.Operation.Revoke,
+            where: _payload.plugin,
+            who: _dao,
+            condition: PermissionLib.NO_CONDITION,
+            permissionId: ScheduledPayments(IMPLEMENTATION)
+                .RESUME_AGREEMENT_PERMISSION()
+        });
+        // Revoke `EXECUTE_PAYMENT_PERMISSION` to the automate address
+        // to allow the automate address to execute payments.
+        permissions[3] = PermissionLib.MultiTargetPermission({
+            operation: PermissionLib.Operation.Revoke,
+            where: _payload.plugin,
+            who: _automate,
+            condition: PermissionLib.NO_CONDITION,
+            permissionId: ScheduledPayments(IMPLEMENTATION)
+                .EXECUTE_PAYMENT_PERMISSION()
+        });
+        // Revoke `PAUSE_AGREEMENT_PERMISSION` to the automate address
+        permissions[4] = PermissionLib.MultiTargetPermission({
+            operation: PermissionLib.Operation.Revoke,
+            where: _payload.plugin,
+            who: _automate,
+            condition: PermissionLib.NO_CONDITION,
+            permissionId: ScheduledPayments(IMPLEMENTATION)
+                .PAUSE_AGREEMENT_PERMISSION()
+        });
     }
-
-    // // @inheritdoc IPluginSetup
-    // function implementation() public override view returns (address) {
-    //     return address(_scheduledPaymentsBase);
-    // }
 }
