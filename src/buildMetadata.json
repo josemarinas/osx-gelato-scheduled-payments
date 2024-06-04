@@ -1,0 +1,27 @@
+{
+    "ui": {},
+    "change": "First version.",
+    "pluginSetup": {
+        "prepareInstallation": {
+            "description": "The information required for the installation.",
+            "inputs": [
+                {
+                    "internalType": "address",
+                    "name": "automate",
+                    "type": "address",
+                    "description": "The address of the automate contract."
+                }
+            ]
+        },
+        "prepareUpdate": {
+            "1": {
+                "description": "No input is required for the update.",
+                "inputs": []
+            }
+        },
+        "prepareUninstallation": {
+            "description": "No input is required for the uninstallation.",
+            "inputs": []
+        }
+    }
+}

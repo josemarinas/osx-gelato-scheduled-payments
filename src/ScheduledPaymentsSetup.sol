@@ -1,6 +1,7 @@
 pragma solidity ^0.8.8;
 
 import {ScheduledPayments} from "./ScheduledPayments.sol";
+import {Automate} from "@gelato/automate/Automate.sol";
 import {IDAO} from "@aragon/osx-commons/dao/IDAO.sol";
 import {PluginUpgradeableSetup} from "@aragon/osx-commons/plugin/setup/PluginUpgradeableSetup.sol";
 import {ProxyLib} from "@aragon/osx-commons/utils/deployment/ProxyLib.sol";
@@ -9,16 +10,7 @@ import {PermissionLib} from "@aragon/osx-commons/permission/PermissionLib.sol";
 contract ScheduledPaymentsSetup is PluginUpgradeableSetup {
     using ProxyLib for address;
 
-    // TODO This permission identifier will be moved into a library in task OS-954.
-    /// @notice The ID of the permission required to call the `execute` function.
-    bytes32 internal constant CANCEL_AGREEMENT_PERMISSION =
-        keccak256("CANCEL_AGREEMENT_PERMISSION");
-    bytes32 internal constant CREATE_AGREEMENT_PERMISSION =
-        keccak256("CREATE_AGREEMENT_PERMISSION");
-    bytes32 internal constant EXECUTE_PAYMENT_PERMISSION =
-        keccak256("EXECUTE_PAYMENT_PERMISSION");
-
-    /// @notice The contract constructor, that deploys the `Multisig` plugin logic contract.
+    /// @notice The contract constructor, that deploys the `SchedulePayments` plugin logic contract.
     constructor() PluginUpgradeableSetup(address(new ScheduledPayments())) {}
 
     function prepareInstallation(
@@ -28,23 +20,20 @@ contract ScheduledPaymentsSetup is PluginUpgradeableSetup {
         external
         returns (address plugin, PreparedSetupData memory preparedSetupData)
     {
-        // Decode `_data` to extract the params needed for deploying and initializing `Multisig` plugin.
-        address payable _automate = abi.decode(_data, (address));
+        // Decode `_data` to extract the params needed for deploying and initializing `SchedulePayments` plugin.
+        address payable automate = abi.decode(_data, (address));
 
         // Deploy and initialize the plugin UUPS proxy.
         plugin = IMPLEMENTATION.deployUUPSProxy(
-            abi.encodeCall(
-                ScheduledPayments.initialize,
-                (IDAO(_dao), _automate)
-            )
+            abi.encodeCall(ScheduledPayments.initialize, (IDAO(_dao), automate))
         );
+
+        address gelato = Automate(automate).gelato();
 
         // // Prepare permissions
         PermissionLib.MultiTargetPermission[]
             memory permissions = new PermissionLib.MultiTargetPermission[](5);
 
-        // // Set permissions to be granted.
-        // // Grant the list of permissions of the plugin to the DAO.
         // Grant `CREATE_AGREEMENT_PERMISSION`
         // to the DAO to allow the DAO to create agreements.
         permissions[0] = PermissionLib.MultiTargetPermission({
@@ -78,7 +67,7 @@ contract ScheduledPaymentsSetup is PluginUpgradeableSetup {
         permissions[3] = PermissionLib.MultiTargetPermission({
             operation: PermissionLib.Operation.Grant,
             where: plugin,
-            who: _automate,
+            who: gelato,
             condition: PermissionLib.NO_CONDITION,
             permissionId: ScheduledPayments(IMPLEMENTATION)
                 .EXECUTE_PAYMENT_PERMISSION()
@@ -87,14 +76,14 @@ contract ScheduledPaymentsSetup is PluginUpgradeableSetup {
         permissions[4] = PermissionLib.MultiTargetPermission({
             operation: PermissionLib.Operation.Grant,
             where: plugin,
-            who: _automate,
+            who: gelato,
             condition: PermissionLib.NO_CONDITION,
             permissionId: ScheduledPayments(IMPLEMENTATION)
                 .PAUSE_AGREEMENT_PERMISSION()
         });
 
-        preparedSetupData.helpers = new address[](0);
-        preparedSetupData.helpers[0] = _automate;
+        preparedSetupData.helpers = new address[](1);
+        preparedSetupData.helpers[0] = gelato;
         preparedSetupData.permissions = permissions;
     }
 
@@ -122,7 +111,7 @@ contract ScheduledPaymentsSetup is PluginUpgradeableSetup {
         view
         returns (PermissionLib.MultiTargetPermission[] memory permissions)
     {
-        address _automate = _payload.currentHelpers[0];
+        address gelato = _payload.currentHelpers[0];
         // Prepare permissions
         permissions = new PermissionLib.MultiTargetPermission[](5);
 
@@ -157,7 +146,7 @@ contract ScheduledPaymentsSetup is PluginUpgradeableSetup {
         permissions[3] = PermissionLib.MultiTargetPermission({
             operation: PermissionLib.Operation.Revoke,
             where: _payload.plugin,
-            who: _automate,
+            who: gelato,
             condition: PermissionLib.NO_CONDITION,
             permissionId: ScheduledPayments(IMPLEMENTATION)
                 .EXECUTE_PAYMENT_PERMISSION()
@@ -166,7 +155,7 @@ contract ScheduledPaymentsSetup is PluginUpgradeableSetup {
         permissions[4] = PermissionLib.MultiTargetPermission({
             operation: PermissionLib.Operation.Revoke,
             where: _payload.plugin,
-            who: _automate,
+            who: gelato,
             condition: PermissionLib.NO_CONDITION,
             permissionId: ScheduledPayments(IMPLEMENTATION)
                 .PAUSE_AGREEMENT_PERMISSION()

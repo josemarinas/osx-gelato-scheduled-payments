@@ -209,7 +209,7 @@ contract ScheduledPayments is PluginUUPSUpgradeable {
         bytes[] memory args = new bytes[](3);
         modules[0] = LibDataTypes.Module.RESOLVER;
         modules[1] = LibDataTypes.Module.PROXY;
-        modules[2] = LibDataTypes.Module.RESOLVER;
+        modules[2] = LibDataTypes.Module.TRIGGER;
         // Checker module args
         // address(this) is the contract address and this.checker.selector
         // is the checker function selector
